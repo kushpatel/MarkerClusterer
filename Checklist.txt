@@ -1,0 +1,8 @@
+get json data
+geocode locations (coma separated)
+plot the points on map (markerclusterer)
+pointers should be clickable- open in new window (links id to url of the record)
+multiple markers on the same location- shift markers/multiple tabs
+
+
+http://stackoverflow.com/questions/6284457/will-the-function-wait-for-the-asynchronous-functions-completion-before-returnin

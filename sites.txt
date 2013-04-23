@@ -1,0 +1,11 @@
+http://jsonviewer.stack.hu/
+http://api.jquery.com/jQuery.get/#jqxhr-object
+http://rayfd.wordpress.com/2007/03/28/why-wont-eval-eval-my-json-or-json-object-object-literal/
+http://api.jquery.com/jQuery.ajax/
+http://skipperkongen.dk/2011/01/11/solr-with-jsonp-with-jquery/
+
+http://discoverdev.odai.yale.edu/vufind-solr/biblio/select/?q=collection_facet:%22Paintings+and+Sculpture%22&fl=geographic_facet,id&sort=geographic_facet+desc&start=0&rows=1000&wt=json&json.wrf=callback
+
+
+
+http://stackoverflow.com/questions/4111080/collapsed-markers-on-google-maps-with-markerclusterer

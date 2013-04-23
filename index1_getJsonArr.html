@@ -1,0 +1,175 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+    <style type="text/css">
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+    </style>
+	<script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+      var script = '<script type="text/javascript" src="src/markerclusterer';
+      if (document.location.search.indexOf('compiled') !== -1) {
+        script += '_compiled';
+      }
+      script += '.js"><' + '/script>';
+      document.write(script);
+    </script>
+
+    <script type="text/javascript">
+	
+	var placesArr = [];
+	var placesArrPos = 0;
+	var idArr = [];
+	var titleArr = [];
+	var authorArr = [];
+	var urlArr = [];
+	var jsonString = "var places = {\"array\":[";
+	
+	function jsonStringBuilder(id, name, title, author, url, lat, lng)
+	{
+		ttl = title.replace(/"/g,"'");
+		auth = author.replace(/"/g,"'");
+		jsonString = jsonString + "{\"id\":\"" + id + "\",\"name\":\"" + name + "\",\"title\":\"" + ttl + "\",\"author\":\"" + auth  + "\",\"url\":\"" + url + "\",\"lat\":\"" + lat + "\",\"lng\":\"" + lng + "\"},";
+	}
+	
+	//adds markers to the map via markerclusterer
+	function addMarkerToMap(markerCluster)
+	{
+		var geocoder = new google.maps.Geocoder();
+		var timeout = 1500;
+
+		geocoder.geocode({ 'address' : placesArr[placesArrPos]}, 
+			function(results, status, numTrials) 
+			{
+					if(status == google.maps.GeocoderStatus.OK)
+					{
+						var lat = results[0].geometry.location.lat();
+						var lng = results[0].geometry.location.lng();
+						var latLng = new google.maps.LatLng(lat, lng);
+						
+						jsonStringBuilder(idArr[placesArrPos], placesArr[placesArrPos], titleArr[placesArrPos], authorArr[placesArrPos], urlArr[placesArrPos], lat, lng);
+						
+						var marker = new google.maps.Marker({
+							position : latLng
+						});
+						try {
+							//setTimeout(markerCluster.addMarker(marker), 3000);
+							markerCluster.addMarker(marker);
+						} catch(err) {
+							alert("Could not geocode: " + location);
+						}
+					}
+					else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT)
+					{
+						alert(status);
+						setTimeout(function() { addMarkerToMap(markerCluster); }, (timeout * 3));
+					}
+					placesArrPos++;
+					if (placesArrPos < placesArr.length)
+					{
+						setTimeout(function() { addMarkerToMap(markerCluster); }, (timeout));
+					}
+					/*if(marker != null)
+					{
+						markerCluster.addMarker(marker);
+						document.geoCodeRequestCompleteFlag++;
+					}
+					else if(trials > 0)
+					{
+						addMarkerToMap(location, markerCluster, trials-1);
+					}*/
+			}
+		);
+	}
+	
+	//get the full location of a place in form of a concatenated string
+	function getLocation(jsonArr)
+	{
+		var locationString = "";
+		for(var i = 0; i < jsonArr.length; i++)
+		{
+			if(i < jsonArr.length - 1)
+			{
+				locationString = locationString + jsonArr[i] + ", ";
+			}
+			else
+			{
+				locationString = locationString + jsonArr[i];
+			}
+		}
+		return locationString;
+	}
+	
+	//main function that parses json and retrieves location names to be geocoded
+	function loadData(mySolrUrl, markerCluster)
+	{
+		$.ajax({
+			url: mySolrUrl,
+			dataType: 'jsonp',
+			success: function(data){
+				//alert(data.response.docs[0].geographic_facet[0]);
+				$.each(data.response.docs, function(i,item){
+				placesArr[i] = getLocation(item.geographic);
+				idArr[i] = item.id;
+				authorArr[i] = item.author;
+				titleArr[i] = item.title;
+				urlArr[i] = item.url;
+				//addMarkerToMap(getLocation(item.geographic_facet), markerCluster);
+				//alert(item.geographic_facet[0]);
+				if ( i == 2000 )
+				{
+					addMarkerToMap(markerCluster);
+					return false;
+				}
+			});
+			}
+		});	
+	}
+	
+	//initializes map and markerclusterer and calls loadData
+	function initialize() 
+	{
+		var url = "http://discover.odai.yale.edu/vufind-solr/biblio/select/?q=collection_facet:%22Paintings+and+Sculpture%22&fl=geographic,id,title,url,author&sort=geographic+desc&start=0&rows=10000&wt=json&json.wrf=?";
+		//var url = "http://discoverdev.odai.yale.edu/vufind-solr/biblio/select/?q=collection_facet:%22Paintings+and+Sculpture%22&fl=geographic_facet,id&sort=geographic_facet+desc&start=0&rows=1000&wt=json";
+	  	var center = new google.maps.LatLng(46.55886,-34.453125);
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 3,
+          center: center,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+		var markerCluster = new MarkerClusterer(map);
+		loadData(url, markerCluster);
+		addMarkerToMap(markerCluster);
+		//addMarkerToMap("Yorkshire, Aire, United Kingdom, Kirkstall", markerCluster)
+		/*var myPlaces=["london","milford","hamden","bridgeport","toronto","new york","new haven","chicago","mumbai"];
+		
+
+		for(var i = 0; i < myPlaces.length; i++)
+		{
+			addMarkerToMap(myPlaces[i], markerCluster);
+		}*/
+    }
+	
+	function showAlert()
+	{
+		myWindow = window.open('','','width=2000,height=1000')
+		myWindow.document.write(jsonString)
+		myWindow.focus()
+		//alert(jsonString);
+	}
+	
+    google.maps.event.addDomListener(window, 'load', initialize);
+	</script>
+	
+  </head>
+  <body>
+    <div id="map"></div>
+	<p><input type="button" value="Click here" onClick="showAlert();"></p>
+  </body>
+</html>
